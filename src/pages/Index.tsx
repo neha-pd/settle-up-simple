@@ -106,6 +106,22 @@ const Index = () => {
     });
   };
 
+  const deleteExpense = (id: string) => {
+    if (!activeGroup) return;
+    updateGroup({ expenses: activeGroup.expenses.filter((e) => e.id !== id) });
+    toast({ title: "🗑️ Expense deleted", description: "The expense has been removed." });
+  };
+
+  const editExpense = (id: string, title: string, amount: number, paidBy: string, splitAmong: string[]) => {
+    if (!activeGroup) return;
+    updateGroup({
+      expenses: activeGroup.expenses.map((e) =>
+        e.id === id ? { ...e, title, amount, paidBy, splitAmong } : e
+      ),
+    });
+    toast({ title: "✏️ Expense updated", description: `"${title}" has been updated.` });
+  };
+
   const clearGroup = () => {
     if (!activeGroup) return;
     updateGroup({ members: [], expenses: [] });
