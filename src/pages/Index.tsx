@@ -270,7 +270,7 @@ const Index = () => {
   }
 
   // ─── Active Group View ───
-  const emoji = EMOJIS[activeGroup.name.split("").reduce((a, c) => a + c.charCodeAt(0), 0) % EMOJIS.length];
+  const emoji = getGroupIcon(activeGroup.name, []);
 
   return (
     <div className="min-h-screen bg-background">
