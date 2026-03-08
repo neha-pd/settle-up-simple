@@ -346,7 +346,7 @@ const Index = () => {
           <div className="space-y-6 animate-slide-up" style={{ animationDelay: "300ms" }}>
             <SettlementList members={activeGroup.members} settlements={settlements} />
             <BalanceSummary members={activeGroup.members} balances={balances} />
-            <ExpenseList members={activeGroup.members} expenses={activeGroup.expenses} groupName={activeGroup.name} onDelete={deleteExpense} onEdit={editExpense} />
+            <ExpenseList members={activeGroup.members} expenses={activeGroup.expenses} onDelete={deleteExpense} onEdit={editExpense} />
           </div>
         )}
       </main>
