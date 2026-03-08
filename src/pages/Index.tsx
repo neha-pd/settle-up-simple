@@ -226,7 +226,13 @@ const Index = () => {
   }
 
   // ─── Active Group View ───
-  const emoji = getGroupIcon(activeGroup.name, []);
+  const handleBack = () => {
+    if (activeGroup.members.length === 0) {
+      deleteGroup(activeGroup.id);
+    } else {
+      setActiveGroupId(null);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -234,10 +240,9 @@ const Index = () => {
       <header className="border-b glass-strong sticky top-0 z-10">
         <div className="container max-w-2xl py-3 px-5 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <Button variant="ghost" size="icon" onClick={() => setActiveGroupId(null)} className="h-9 w-9 rounded-xl">
+            <Button variant="ghost" size="icon" onClick={handleBack} className="h-9 w-9 rounded-xl">
               <ChevronLeft className="h-5 w-5" />
             </Button>
-            <div className="h-9 w-9 rounded-xl gradient-hero flex items-center justify-center text-base">{emoji}</div>
             <div>
               {isEditingName ? (
                 <input
