@@ -33,10 +33,12 @@ export function AddExpenseForm({ members, onAdd }: AddExpenseFormProps) {
     }
   };
 
+  const isValid = title.trim().length > 0 && !isNaN(parseFloat(amount)) && parseFloat(amount) > 0 && paidBy.length > 0 && splitAmong.length > 0;
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isValid) return;
     const parsedAmount = parseFloat(amount);
-    if (!title.trim() || isNaN(parsedAmount) || parsedAmount <= 0 || !paidBy || splitAmong.length === 0) return;
     onAdd(title.trim(), Math.round(parsedAmount * 100) / 100, paidBy, splitAmong);
     setTitle("");
     setAmount("");
