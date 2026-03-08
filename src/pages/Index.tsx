@@ -146,6 +146,20 @@ const Index = () => {
         </div>
 
         <main className="container max-w-2xl py-6 px-5 space-y-6">
+          {/* Export All */}
+          {groups.some((g) => g.expenses.length > 0) && (
+            <div className="flex justify-end">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => exportAllGroupsPdf(groups)}
+                className="text-muted-foreground hover:text-primary gap-1.5 rounded-xl text-xs"
+              >
+                <Download className="h-3.5 w-3.5" />
+                Export All Groups
+              </Button>
+            </div>
+          )}
           {/* Create Group */}
           <form onSubmit={handleCreateGroup} className="flex gap-2">
             <div className="flex-1 relative">
