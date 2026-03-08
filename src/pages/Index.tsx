@@ -13,11 +13,19 @@ import { Trash2, X, Wallet, Plus, ChevronLeft, Users, IndianRupee, Receipt, Arro
 import { exportGroupPdf, exportAllGroupsPdf } from "@/lib/exportPdf";
 import type { Member, Expense } from "@/lib/expenses";
 
+interface SettledPayment {
+  from: string;
+  to: string;
+  amount: number;
+  settledAt: Date;
+}
+
 interface Group {
   id: string;
   name: string;
   members: Member[];
   expenses: Expense[];
+  settledPayments: SettledPayment[];
 }
 
 const createGroup = (name: string): Group => ({
@@ -25,6 +33,7 @@ const createGroup = (name: string): Group => ({
   name,
   members: [],
   expenses: [],
+  settledPayments: [],
 });
 
 const Index = () => {
