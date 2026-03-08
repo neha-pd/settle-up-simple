@@ -9,7 +9,8 @@ import { ExpenseList } from "@/components/ExpenseList";
 import { MemberAvatar } from "@/components/MemberAvatar";
 import { computeBalances, simplifyDebts } from "@/lib/expenses";
 import { toast } from "@/hooks/use-toast";
-import { Trash2, X, Wallet, Plus, ChevronLeft, Users, Sparkles, IndianRupee, Receipt, ArrowRight } from "lucide-react";
+import { Trash2, X, Wallet, Plus, ChevronLeft, Users, Sparkles, IndianRupee, Receipt, ArrowRight, Download } from "lucide-react";
+import { exportGroupPdf } from "@/lib/exportPdf";
 import type { Member, Expense } from "@/lib/expenses";
 
 interface Group {
@@ -263,12 +264,25 @@ const Index = () => {
               </p>
             </div>
           </div>
-          {(activeGroup.members.length > 0 || activeGroup.expenses.length > 0) && (
-            <Button variant="ghost" size="sm" onClick={clearGroup} className="text-muted-foreground hover:text-negative gap-1.5 rounded-xl text-xs">
-              <Trash2 className="h-3.5 w-3.5" />
-              Clear
-            </Button>
-          )}
+          <div className="flex items-center gap-1">
+            {activeGroup.expenses.length > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => exportGroupPdf(activeGroup.name, activeGroup.members, activeGroup.expenses, balances, settlements)}
+                className="text-muted-foreground hover:text-primary gap-1.5 rounded-xl text-xs"
+              >
+                <Download className="h-3.5 w-3.5" />
+                Export
+              </Button>
+            )}
+            {(activeGroup.members.length > 0 || activeGroup.expenses.length > 0) && (
+              <Button variant="ghost" size="sm" onClick={clearGroup} className="text-muted-foreground hover:text-negative gap-1.5 rounded-xl text-xs">
+                <Trash2 className="h-3.5 w-3.5" />
+                Clear
+              </Button>
+            )}
+          </div>
         </div>
       </header>
 
@@ -333,7 +347,7 @@ const Index = () => {
           <div className="space-y-6 animate-slide-up" style={{ animationDelay: "300ms" }}>
             <SettlementList members={activeGroup.members} settlements={settlements} />
             <BalanceSummary members={activeGroup.members} balances={balances} />
-            <ExpenseList members={activeGroup.members} expenses={activeGroup.expenses} onDelete={deleteExpense} onEdit={editExpense} />
+            <ExpenseList members={activeGroup.members} expenses={activeGroup.expenses} groupName={activeGroup.name} onDelete={deleteExpense} onEdit={editExpense} />
           </div>
         )}
       </main>
