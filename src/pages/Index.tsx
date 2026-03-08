@@ -132,7 +132,32 @@ const Index = () => {
 
   const clearGroup = () => {
     if (!activeGroup) return;
-    updateGroup({ members: [], expenses: [] });
+    updateGroup({ members: [], expenses: [], settledPayments: [] });
+  };
+
+  const markSettled = (from: string, to: string, amount: number) => {
+    if (!activeGroup) return;
+    updateGroup({
+      settledPayments: [
+        ...activeGroup.settledPayments,
+        { from, to, amount, settledAt: new Date() },
+      ],
+    });
+    const fromName = activeGroup.members.find((m) => m.id === from)?.name ?? from;
+    const toName = activeGroup.members.find((m) => m.id === to)?.name ?? to;
+    toast({ title: "✅ Marked as settled", description: `${fromName} paid ₹${amount.toFixed(2)} to ${toName}.` });
+  };
+
+  const undoSettled = (from: string, to: string, amount: number) => {
+    if (!activeGroup) return;
+    const idx = activeGroup.settledPayments.findIndex(
+      (p) => p.from === from && p.to === to && p.amount === amount
+    );
+    if (idx === -1) return;
+    const updated = [...activeGroup.settledPayments];
+    updated.splice(idx, 1);
+    updateGroup({ settledPayments: updated });
+    toast({ title: "↩️ Settlement undone", description: "Marked as unsettled." });
   };
 
   // ─── Group List View ───
