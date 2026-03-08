@@ -215,7 +215,7 @@ const Index = () => {
           ) : (
             <div className="space-y-3">
               {groups.map((g, i) => {
-                const emoji = EMOJIS[g.name.split("").reduce((a, c) => a + c.charCodeAt(0), 0) % EMOJIS.length];
+                const emoji = getGroupIcon(g.name, []);
                 const groupTotal = g.expenses.reduce((s, e) => s + e.amount, 0);
                 return (
                   <button
