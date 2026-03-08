@@ -58,6 +58,10 @@ const Index = () => {
   const handleCreateGroup = (e: React.FormEvent) => {
     e.preventDefault();
     const name = newGroupName.trim() || "New Group";
+    if (groups.some((g) => g.name.toLowerCase() === name.toLowerCase())) {
+      toast({ title: "⚠️ Duplicate group", description: `A group named "${name}" already exists.`, variant: "destructive" });
+      return;
+    }
     const group = createGroup(name);
     setGroups((prev) => [...prev, group]);
     setActiveGroupId(group.id);
