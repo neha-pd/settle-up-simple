@@ -175,7 +175,6 @@ const Index = () => {
           ) : (
             <div className="space-y-3">
               {groups.map((g, i) => {
-                const emoji = getGroupIcon(g.name, []);
                 const groupTotal = g.expenses.reduce((s, e) => s + e.amount, 0);
                 return (
                   <button
@@ -185,9 +184,6 @@ const Index = () => {
                     style={{ animationDelay: `${i * 60}ms` }}
                   >
                     <div className="flex items-center gap-3.5">
-                      <div className="h-12 w-12 rounded-xl gradient-hero flex items-center justify-center text-xl shrink-0">
-                        {emoji}
-                      </div>
                       <div className="flex-1 min-w-0">
                         <p className="font-display font-bold text-[15px] truncate">{g.name}</p>
                         <p className="text-xs text-muted-foreground mt-0.5">
