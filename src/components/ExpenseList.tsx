@@ -8,7 +8,6 @@ import type { Member, Expense } from "@/lib/expenses";
 interface ExpenseListProps {
   members: Member[];
   expenses: Expense[];
-  groupName?: string;
   onDelete?: (id: string) => void;
   onEdit?: (id: string, title: string, amount: number, paidBy: string, splitAmong: string[]) => void;
 }
