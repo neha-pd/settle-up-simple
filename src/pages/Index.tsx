@@ -87,6 +87,13 @@ const Index = () => {
 
   const addExpense = (title: string, amount: number, paidBy: string, splitAmong: string[]) => {
     if (!activeGroup) return;
+    const isDuplicate = activeGroup.expenses.some(
+      (e) => e.title.toLowerCase() === title.toLowerCase() && e.amount === amount && e.paidBy === paidBy
+    );
+    if (isDuplicate) {
+      toast({ title: "⚠️ Duplicate expense", description: `"${title}" for ₹${amount.toFixed(2)} already exists.`, variant: "destructive" });
+      return;
+    }
     updateGroup({
       expenses: [
         { id: crypto.randomUUID(), title, amount, paidBy, splitAmong, createdAt: new Date() },
