@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Receipt, Pencil, Trash2, Check, X } from "lucide-react";
+import { Receipt, Pencil, Trash2, Check, X, Download } from "lucide-react";
+import { exportExpensePdf } from "@/lib/exportPdf";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MemberAvatar } from "@/components/MemberAvatar";
