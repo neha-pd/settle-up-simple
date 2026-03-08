@@ -8,6 +8,7 @@ import { SettlementList } from "@/components/SettlementList";
 import { ExpenseList } from "@/components/ExpenseList";
 import { MemberAvatar } from "@/components/MemberAvatar";
 import { computeBalances, simplifyDebts } from "@/lib/expenses";
+import { toast } from "@/hooks/use-toast";
 import { Trash2, X, Wallet, Plus, ChevronLeft, Users, Sparkles, IndianRupee, Receipt, ArrowRight } from "lucide-react";
 import type { Member, Expense } from "@/lib/expenses";
 
