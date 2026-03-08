@@ -89,6 +89,10 @@ const Index = () => {
         ...activeGroup.expenses,
       ],
     });
+    toast({
+      title: "✅ Expense added",
+      description: `₹${amount.toFixed(2)} for "${title}" added successfully.`,
+    });
   };
 
   const clearGroup = () => {
