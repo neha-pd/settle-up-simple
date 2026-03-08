@@ -38,7 +38,7 @@ const createGroup = (name: string): Group => ({
 });
 
 const Index = () => {
-  const { signOut } = useAuth();
+  const { signOut, profile, user } = useAuth();
   const [groups, setGroups] = useState<Group[]>([]);
   const [activeGroupId, setActiveGroupId] = useState<string | null>(null);
   const [isEditingName, setIsEditingName] = useState(false);
