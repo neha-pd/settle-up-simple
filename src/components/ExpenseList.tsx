@@ -12,7 +12,7 @@ interface ExpenseListProps {
   onEdit?: (id: string, title: string, amount: number, paidBy: string, splitAmong: string[]) => void;
 }
 
-export function ExpenseList({ members, expenses, groupName = "Group", onDelete, onEdit }: ExpenseListProps) {
+export function ExpenseList({ members, expenses, onDelete, onEdit }: ExpenseListProps) {
   const getName = (id: string) => members.find((m) => m.id === id)?.name ?? id;
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState("");
