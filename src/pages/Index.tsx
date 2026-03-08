@@ -13,11 +13,19 @@ import { Trash2, X, Wallet, Plus, ChevronLeft, Users, IndianRupee, Receipt, Arro
 import { exportGroupPdf, exportAllGroupsPdf } from "@/lib/exportPdf";
 import type { Member, Expense } from "@/lib/expenses";
 
+interface SettledPayment {
+  from: string;
+  to: string;
+  amount: number;
+  settledAt: Date;
+}
+
 interface Group {
   id: string;
   name: string;
   members: Member[];
   expenses: Expense[];
+  settledPayments: SettledPayment[];
 }
 
 const createGroup = (name: string): Group => ({
@@ -25,6 +33,7 @@ const createGroup = (name: string): Group => ({
   name,
   members: [],
   expenses: [],
+  settledPayments: [],
 });
 
 const Index = () => {
@@ -123,7 +132,32 @@ const Index = () => {
 
   const clearGroup = () => {
     if (!activeGroup) return;
-    updateGroup({ members: [], expenses: [] });
+    updateGroup({ members: [], expenses: [], settledPayments: [] });
+  };
+
+  const markSettled = (from: string, to: string, amount: number) => {
+    if (!activeGroup) return;
+    updateGroup({
+      settledPayments: [
+        ...activeGroup.settledPayments,
+        { from, to, amount, settledAt: new Date() },
+      ],
+    });
+    const fromName = activeGroup.members.find((m) => m.id === from)?.name ?? from;
+    const toName = activeGroup.members.find((m) => m.id === to)?.name ?? to;
+    toast({ title: "✅ Marked as settled", description: `${fromName} paid ₹${amount.toFixed(2)} to ${toName}.` });
+  };
+
+  const undoSettled = (from: string, to: string, amount: number) => {
+    if (!activeGroup) return;
+    const idx = activeGroup.settledPayments.findIndex(
+      (p) => p.from === from && p.to === to && p.amount === amount
+    );
+    if (idx === -1) return;
+    const updated = [...activeGroup.settledPayments];
+    updated.splice(idx, 1);
+    updateGroup({ settledPayments: updated });
+    toast({ title: "↩️ Settlement undone", description: "Marked as unsettled." });
   };
 
   // ─── Group List View ───
@@ -357,7 +391,13 @@ const Index = () => {
         {/* Results */}
         {activeGroup.expenses.length > 0 && (
           <div className="space-y-6 animate-slide-up" style={{ animationDelay: "300ms" }}>
-            <SettlementList members={activeGroup.members} settlements={settlements} />
+            <SettlementList
+              members={activeGroup.members}
+              settlements={settlements}
+              settledPayments={activeGroup.settledPayments}
+              onMarkSettled={markSettled}
+              onUndoSettled={undoSettled}
+            />
             <BalanceSummary members={activeGroup.members} balances={balances} />
             <ExpenseList members={activeGroup.members} expenses={activeGroup.expenses} onDelete={deleteExpense} onEdit={editExpense} />
           </div>
