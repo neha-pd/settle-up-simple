@@ -16,16 +16,48 @@ import type { Member, Expense } from "@/lib/expenses";
 interface Group {
   id: string;
   name: string;
-  icon: string;
   members: Member[];
   expenses: Expense[];
 }
 
-const GROUP_ICONS = [
-  "🏖️", "🍕", "🏠", "✈️", "🎉", "🚗", "🎮", "☕",
-  "🎯", "🌮", "🎸", "⚽", "🏕️", "🎂", "🛒", "💼",
-  "🎬", "🧳", "🍿", "🏋️", "🎤", "🛍️", "🍣", "🚀",
-];
+const GROUP_ICONS: Record<string, string> = {
+  trip: "✈️", travel: "✈️", vacation: "🏖️", beach: "🏖️", goa: "🏖️",
+  food: "🍕", dinner: "🍽️", lunch: "🍽️", restaurant: "🍽️", pizza: "🍕",
+  home: "🏠", rent: "🏠", house: "🏠", flat: "🏠", apartment: "🏠",
+  party: "🎉", birthday: "🎂", celebration: "🎉",
+  car: "🚗", ride: "🚗", cab: "🚕", uber: "🚕", fuel: "⛽",
+  game: "🎮", gaming: "🎮", movie: "🎬", film: "🎬",
+  coffee: "☕", cafe: "☕", tea: "☕",
+  office: "💼", work: "💼", project: "💼",
+  grocery: "🛒", shopping: "🛍️", shop: "🛍️",
+  gym: "🏋️", sport: "⚽", cricket: "🏏", football: "⚽",
+  music: "🎸", concert: "🎤",
+  trek: "🏕️", hike: "🏕️", camp: "🏕️", outing: "🌄",
+};
+
+const DEFAULT_ICONS = ["🏖️", "🍕", "🏠", "✈️", "🎉", "🚗", "🎮", "☕", "🎯", "🌮", "🎸", "⚽", "🏕️", "🎂", "🛒", "💼"];
+
+function getGroupIcon(name: string, existingIcons: string[]): string {
+  const lower = name.toLowerCase();
+  for (const [keyword, icon] of Object.entries(GROUP_ICONS)) {
+    if (lower.includes(keyword)) return icon;
+  }
+  // Assign a unique default icon not already used
+  const available = DEFAULT_ICONS.filter((i) => !existingIcons.includes(i));
+  if (available.length > 0) {
+    const hash = lower.split("").reduce((a, c) => a + c.charCodeAt(0), 0);
+    return available[hash % available.length];
+  }
+  const hash = lower.split("").reduce((a, c) => a + c.charCodeAt(0), 0);
+  return DEFAULT_ICONS[hash % DEFAULT_ICONS.length];
+}
+
+const createGroup = (name: string, icon: string): Group => ({
+  id: crypto.randomUUID(),
+  name,
+  members: [],
+  expenses: [],
+});
 
 const Index = () => {
   const [groups, setGroups] = useState<Group[]>([]);
@@ -61,7 +93,15 @@ const Index = () => {
       toast({ title: "⚠️ Duplicate group", description: `A group named "${name}" already exists.`, variant: "destructive" });
       return;
     }
-    const group = createGroup(name);
+    const existingIcons = groups.map((g) => {
+      const lower = g.name.toLowerCase();
+      for (const [keyword, icon] of Object.entries(GROUP_ICONS)) {
+        if (lower.includes(keyword)) return icon;
+      }
+      return "";
+    });
+    const icon = getGroupIcon(name, existingIcons);
+    const group = createGroup(name, icon);
     setGroups((prev) => [...prev, group]);
     setActiveGroupId(group.id);
     setNewGroupName("");
@@ -175,7 +215,7 @@ const Index = () => {
           ) : (
             <div className="space-y-3">
               {groups.map((g, i) => {
-                const emoji = EMOJIS[g.name.split("").reduce((a, c) => a + c.charCodeAt(0), 0) % EMOJIS.length];
+                const emoji = getGroupIcon(g.name, []);
                 const groupTotal = g.expenses.reduce((s, e) => s + e.amount, 0);
                 return (
                   <button
@@ -230,7 +270,7 @@ const Index = () => {
   }
 
   // ─── Active Group View ───
-  const emoji = EMOJIS[activeGroup.name.split("").reduce((a, c) => a + c.charCodeAt(0), 0) % EMOJIS.length];
+  const emoji = getGroupIcon(activeGroup.name, []);
 
   return (
     <div className="min-h-screen bg-background">
