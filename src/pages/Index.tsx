@@ -6,8 +6,9 @@ import { AddExpenseForm } from "@/components/AddExpenseForm";
 import { BalanceSummary } from "@/components/BalanceSummary";
 import { SettlementList } from "@/components/SettlementList";
 import { ExpenseList } from "@/components/ExpenseList";
+import { MemberAvatar } from "@/components/MemberAvatar";
 import { computeBalances, simplifyDebts } from "@/lib/expenses";
-import { Trash2, X, Wallet, Plus, ChevronLeft, Users } from "lucide-react";
+import { Trash2, X, Wallet, Plus, ChevronLeft, Users, Sparkles, IndianRupee, Receipt, ArrowRight } from "lucide-react";
 import type { Member, Expense } from "@/lib/expenses";
 
 interface Group {
@@ -23,6 +24,8 @@ const createGroup = (name: string): Group => ({
   members: [],
   expenses: [],
 });
+
+const EMOJIS = ["🏖️", "🍕", "🏠", "✈️", "🎉", "🚗", "🎮", "☕"];
 
 const Index = () => {
   const [groups, setGroups] = useState<Group[]>([]);
@@ -96,62 +99,98 @@ const Index = () => {
   if (!activeGroup) {
     return (
       <div className="min-h-screen bg-background">
-        <header className="border-b bg-card/80 backdrop-blur-sm sticky top-0 z-10">
-          <div className="container max-w-2xl py-4 flex items-center gap-3">
-            <div className="h-9 w-9 rounded-lg bg-primary flex items-center justify-center">
-              <Wallet className="h-5 w-5 text-primary-foreground" />
+        {/* Hero Header */}
+        <div className="gradient-hero">
+          <div className="container max-w-2xl pt-12 pb-8 px-5">
+            <div className="flex items-center gap-3 mb-1">
+              <div className="h-10 w-10 rounded-2xl gradient-primary flex items-center justify-center shadow-glow">
+                <Wallet className="h-5 w-5 text-primary-foreground" />
+              </div>
+              <h1 className="font-display font-extrabold text-2xl tracking-tight">SettleUp</h1>
             </div>
-            <h1 className="font-display font-bold text-xl">SettleUp</h1>
+            <p className="text-muted-foreground text-sm mt-3 max-w-md">
+              Split expenses effortlessly. Create a group, add members, and let us figure out who owes what.
+            </p>
           </div>
-        </header>
+        </div>
 
-        <main className="container max-w-2xl py-6 space-y-6">
+        <main className="container max-w-2xl py-6 px-5 space-y-6">
+          {/* Create Group */}
           <form onSubmit={handleCreateGroup} className="flex gap-2">
-            <input
-              className="flex-1 h-10 rounded-md border border-input bg-background px-3 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              placeholder="Group name (e.g. Goa Trip)"
-              value={newGroupName}
-              onChange={(e) => setNewGroupName(e.target.value)}
-            />
-            <Button type="submit" className="gap-1.5">
+            <div className="flex-1 relative">
+              <input
+                className="w-full h-11 rounded-xl border border-input bg-card px-4 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring shadow-soft transition-shadow focus-visible:shadow-glow"
+                placeholder="Group name (e.g. Goa Trip 🏖️)"
+                value={newGroupName}
+                onChange={(e) => setNewGroupName(e.target.value)}
+              />
+            </div>
+            <Button type="submit" className="h-11 rounded-xl gap-1.5 gradient-primary border-0 shadow-glow hover:opacity-90 transition-opacity px-5">
               <Plus className="h-4 w-4" />
-              New Group
+              Create
             </Button>
           </form>
 
           {groups.length === 0 ? (
-            <div className="text-center py-16 space-y-3">
-              <Users className="h-12 w-12 mx-auto text-muted-foreground/40" />
-              <p className="text-muted-foreground">Create your first group to start splitting expenses.</p>
+            <div className="text-center py-20 space-y-4 animate-fade-in">
+              <div className="h-20 w-20 rounded-3xl gradient-hero mx-auto flex items-center justify-center">
+                <Users className="h-9 w-9 text-muted-foreground/50" />
+              </div>
+              <div>
+                <p className="font-display font-semibold text-foreground">No groups yet</p>
+                <p className="text-muted-foreground text-sm mt-1">Create your first group to start splitting expenses.</p>
+              </div>
             </div>
           ) : (
             <div className="space-y-3">
-              {groups.map((g) => (
-                <button
-                  key={g.id}
-                  onClick={() => setActiveGroupId(g.id)}
-                  className="w-full text-left rounded-xl bg-card border p-4 hover:border-primary/40 transition-colors group"
-                >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-display font-semibold">{g.name}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        {g.members.length} member{g.members.length !== 1 ? "s" : ""} · {g.expenses.length} expense{g.expenses.length !== 1 ? "s" : ""}
-                      </p>
+              {groups.map((g, i) => {
+                const emoji = EMOJIS[g.name.split("").reduce((a, c) => a + c.charCodeAt(0), 0) % EMOJIS.length];
+                const groupTotal = g.expenses.reduce((s, e) => s + e.amount, 0);
+                return (
+                  <button
+                    key={g.id}
+                    onClick={() => setActiveGroupId(g.id)}
+                    className="w-full text-left rounded-2xl glass shadow-soft p-4 hover:shadow-glow hover:border-primary/30 transition-all group animate-fade-in"
+                    style={{ animationDelay: `${i * 60}ms` }}
+                  >
+                    <div className="flex items-center gap-3.5">
+                      <div className="h-12 w-12 rounded-xl gradient-hero flex items-center justify-center text-xl shrink-0">
+                        {emoji}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-display font-bold text-[15px] truncate">{g.name}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {g.members.length} member{g.members.length !== 1 ? "s" : ""} · {g.expenses.length} expense{g.expenses.length !== 1 ? "s" : ""}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        {groupTotal > 0 && (
+                          <span className="text-sm font-display font-bold text-foreground">₹{groupTotal.toFixed(0)}</span>
+                        )}
+                        <span
+                          role="button"
+                          onClick={(e) => { e.stopPropagation(); deleteGroup(g.id); }}
+                          className="p-2 rounded-xl opacity-0 group-hover:opacity-100 hover:bg-negative/10 text-muted-foreground hover:text-negative transition-all"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </span>
+                        <ArrowRight className="h-4 w-4 text-muted-foreground/40 group-hover:text-primary transition-colors" />
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span
-                        role="button"
-                        onClick={(e) => { e.stopPropagation(); deleteGroup(g.id); }}
-                        className="p-1.5 rounded-md opacity-0 group-hover:opacity-100 hover:bg-negative/10 text-muted-foreground hover:text-negative transition-all"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </span>
-                      <ChevronLeft className="h-4 w-4 rotate-180 text-muted-foreground" />
-                    </div>
-                  </div>
-                </button>
-              ))}
+                    {/* Member avatars preview */}
+                    {g.members.length > 0 && (
+                      <div className="flex items-center gap-1 mt-3 -space-x-1.5">
+                        {g.members.slice(0, 5).map((m) => (
+                          <MemberAvatar key={m.id} name={m.name} size="sm" className="ring-2 ring-card" />
+                        ))}
+                        {g.members.length > 5 && (
+                          <span className="text-[10px] text-muted-foreground ml-2">+{g.members.length - 5}</span>
+                        )}
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
             </div>
           )}
         </main>
@@ -160,88 +199,110 @@ const Index = () => {
   }
 
   // ─── Active Group View ───
+  const emoji = EMOJIS[activeGroup.name.split("").reduce((a, c) => a + c.charCodeAt(0), 0) % EMOJIS.length];
+
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b bg-card/80 backdrop-blur-sm sticky top-0 z-10">
-        <div className="container max-w-2xl py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" onClick={() => setActiveGroupId(null)} className="h-9 w-9">
+      {/* Header */}
+      <header className="border-b glass-strong sticky top-0 z-10">
+        <div className="container max-w-2xl py-3 px-5 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <Button variant="ghost" size="icon" onClick={() => setActiveGroupId(null)} className="h-9 w-9 rounded-xl">
               <ChevronLeft className="h-5 w-5" />
             </Button>
+            <div className="h-9 w-9 rounded-xl gradient-hero flex items-center justify-center text-base">{emoji}</div>
             <div>
-              <h1 className="font-display font-bold text-xl leading-tight">SettleUp</h1>
               {isEditingName ? (
                 <input
                   autoFocus
-                  className="text-xs text-muted-foreground bg-transparent border-b border-primary outline-none"
+                  className="font-display font-bold text-sm bg-transparent border-b-2 border-primary outline-none"
                   value={activeGroup.name}
                   onChange={(e) => updateGroup({ name: e.target.value })}
                   onBlur={() => setIsEditingName(false)}
                   onKeyDown={(e) => e.key === "Enter" && setIsEditingName(false)}
                 />
               ) : (
-                <button onClick={() => setIsEditingName(true)} className="text-xs text-muted-foreground hover:text-foreground transition-colors">
-                  {activeGroup.name} ✎
+                <button onClick={() => setIsEditingName(true)} className="font-display font-bold text-sm hover:text-primary transition-colors">
+                  {activeGroup.name}
                 </button>
               )}
+              <p className="text-[11px] text-muted-foreground">
+                {activeGroup.members.length} member{activeGroup.members.length !== 1 ? "s" : ""}
+              </p>
             </div>
           </div>
           {(activeGroup.members.length > 0 || activeGroup.expenses.length > 0) && (
-            <Button variant="ghost" size="sm" onClick={clearGroup} className="text-muted-foreground hover:text-negative gap-1.5">
-              <Trash2 className="h-4 w-4" />
+            <Button variant="ghost" size="sm" onClick={clearGroup} className="text-muted-foreground hover:text-negative gap-1.5 rounded-xl text-xs">
+              <Trash2 className="h-3.5 w-3.5" />
               Clear
             </Button>
           )}
         </div>
       </header>
 
-      <main className="container max-w-2xl py-6 space-y-6">
+      <main className="container max-w-2xl py-6 px-5 space-y-6">
+        {/* Stats Cards */}
         {activeGroup.members.length > 0 && (
-          <div className="grid grid-cols-3 gap-3">
-            <div className="rounded-xl bg-card border p-4 text-center">
-              <p className="text-2xl font-display font-bold">{activeGroup.members.length}</p>
-              <p className="text-xs text-muted-foreground">Members</p>
+          <div className="grid grid-cols-3 gap-3 animate-fade-in">
+            <div className="rounded-2xl glass shadow-soft p-4 text-center">
+              <div className="h-8 w-8 rounded-xl bg-primary/10 mx-auto flex items-center justify-center mb-2">
+                <Users className="h-4 w-4 text-primary" />
+              </div>
+              <p className="text-2xl font-display font-extrabold">{activeGroup.members.length}</p>
+              <p className="text-[11px] text-muted-foreground font-medium">Members</p>
             </div>
-            <div className="rounded-xl bg-card border p-4 text-center">
-              <p className="text-2xl font-display font-bold">{activeGroup.expenses.length}</p>
-              <p className="text-xs text-muted-foreground">Expenses</p>
+            <div className="rounded-2xl glass shadow-soft p-4 text-center">
+              <div className="h-8 w-8 rounded-xl bg-accent/10 mx-auto flex items-center justify-center mb-2">
+                <Receipt className="h-4 w-4 text-accent" />
+              </div>
+              <p className="text-2xl font-display font-extrabold">{activeGroup.expenses.length}</p>
+              <p className="text-[11px] text-muted-foreground font-medium">Expenses</p>
             </div>
-            <div className="rounded-xl bg-card border p-4 text-center">
-              <p className="text-2xl font-display font-bold">₹{totalSpent.toFixed(0)}</p>
-              <p className="text-xs text-muted-foreground">Total</p>
+            <div className="rounded-2xl glass shadow-soft p-4 text-center">
+              <div className="h-8 w-8 rounded-xl bg-positive/10 mx-auto flex items-center justify-center mb-2">
+                <IndianRupee className="h-4 w-4 text-positive" />
+              </div>
+              <p className="text-2xl font-display font-extrabold">₹{totalSpent.toFixed(0)}</p>
+              <p className="text-[11px] text-muted-foreground font-medium">Total</p>
             </div>
           </div>
         )}
 
-        <section className="space-y-3">
-          <h2 className="font-display font-semibold text-sm text-muted-foreground uppercase tracking-wider">Members</h2>
+        {/* Members */}
+        <section className="space-y-3 animate-slide-up" style={{ animationDelay: "100ms" }}>
+          <h2 className="font-display font-bold text-xs text-muted-foreground uppercase tracking-widest">Members</h2>
           <AddMemberForm onAdd={addMember} />
           {activeGroup.members.length > 0 && (
             <div className="flex flex-wrap gap-2">
               {activeGroup.members.map((m) => (
-                <Badge key={m.id} variant="secondary" className="gap-1 pl-3 pr-1 py-1.5 text-sm">
-                  {m.name}
+                <div key={m.id} className="flex items-center gap-2 rounded-xl glass shadow-soft pl-1.5 pr-2 py-1.5 animate-fade-in-scale">
+                  <MemberAvatar name={m.name} size="sm" />
+                  <span className="text-sm font-medium">{m.name}</span>
                   <button
                     onClick={() => removeMember(m.id)}
-                    className="ml-1 rounded-full p-0.5 hover:bg-foreground/10 transition-colors"
+                    className="ml-0.5 rounded-full p-1 hover:bg-negative/10 text-muted-foreground hover:text-negative transition-all"
                     title={activeGroup.expenses.some((e) => e.paidBy === m.id || e.splitAmong.includes(m.id)) ? "Can't remove — part of expenses" : "Remove"}
                   >
                     <X className="h-3 w-3" />
                   </button>
-                </Badge>
+                </div>
               ))}
             </div>
           )}
         </section>
 
-        <AddExpenseForm members={activeGroup.members} onAdd={addExpense} />
+        {/* Expense Form */}
+        <div className="animate-slide-up" style={{ animationDelay: "200ms" }}>
+          <AddExpenseForm members={activeGroup.members} onAdd={addExpense} />
+        </div>
 
+        {/* Results */}
         {activeGroup.expenses.length > 0 && (
-          <>
+          <div className="space-y-6 animate-slide-up" style={{ animationDelay: "300ms" }}>
             <SettlementList members={activeGroup.members} settlements={settlements} />
             <BalanceSummary members={activeGroup.members} balances={balances} />
             <ExpenseList members={activeGroup.members} expenses={activeGroup.expenses} />
-          </>
+          </div>
         )}
       </main>
     </div>
