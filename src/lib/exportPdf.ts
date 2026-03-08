@@ -1,6 +1,7 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import type { Member, Expense, Settlement } from "@/lib/expenses";
+import { computeBalances, simplifyDebts } from "@/lib/expenses";
 
 const getName = (members: Member[], id: string) =>
   members.find((m) => m.id === id)?.name ?? id;
