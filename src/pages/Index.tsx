@@ -391,7 +391,13 @@ const Index = () => {
         {/* Results */}
         {activeGroup.expenses.length > 0 && (
           <div className="space-y-6 animate-slide-up" style={{ animationDelay: "300ms" }}>
-            <SettlementList members={activeGroup.members} settlements={settlements} />
+            <SettlementList
+              members={activeGroup.members}
+              settlements={settlements}
+              settledPayments={activeGroup.settledPayments}
+              onMarkSettled={markSettled}
+              onUndoSettled={undoSettled}
+            />
             <BalanceSummary members={activeGroup.members} balances={balances} />
             <ExpenseList members={activeGroup.members} expenses={activeGroup.expenses} onDelete={deleteExpense} onEdit={editExpense} />
           </div>
