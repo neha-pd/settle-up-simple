@@ -38,7 +38,7 @@ const createGroup = (name: string): Group => ({
 });
 
 const Index = () => {
-  const { signOut } = useAuth();
+  const { signOut, profile, user } = useAuth();
   const [groups, setGroups] = useState<Group[]>([]);
   const [activeGroupId, setActiveGroupId] = useState<string | null>(null);
   const [isEditingName, setIsEditingName] = useState(false);
@@ -176,10 +176,20 @@ const Index = () => {
                 </div>
                 <h1 className="font-display font-extrabold text-2xl tracking-tight">SettleUp</h1>
               </div>
-              <Button variant="ghost" size="sm" onClick={signOut} className="text-muted-foreground hover:text-negative gap-1.5 rounded-xl text-xs">
-                <LogOut className="h-3.5 w-3.5" />
-                Sign Out
-              </Button>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
+                  {profile?.avatar_url && (
+                    <img src={profile.avatar_url} alt="" className="h-7 w-7 rounded-full" />
+                  )}
+                  <span className="text-sm font-medium text-muted-foreground">
+                    {profile?.display_name || user?.email?.split("@")[0] || "User"}
+                  </span>
+                </div>
+                <Button variant="ghost" size="sm" onClick={signOut} className="text-muted-foreground hover:text-negative gap-1.5 rounded-xl text-xs">
+                  <LogOut className="h-3.5 w-3.5" />
+                  Sign Out
+                </Button>
+              </div>
             </div>
             <p className="text-muted-foreground text-sm mt-3 max-w-md">
               Split expenses effortlessly. Create a group, add members, and let us figure out who owes what.
