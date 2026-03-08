@@ -61,15 +61,7 @@ const Index = () => {
       toast({ title: "⚠️ Duplicate group", description: `A group named "${name}" already exists.`, variant: "destructive" });
       return;
     }
-    const existingIcons = groups.map((g) => {
-      const lower = g.name.toLowerCase();
-      for (const [keyword, icon] of Object.entries(GROUP_ICONS)) {
-        if (lower.includes(keyword)) return icon;
-      }
-      return "";
-    });
-    const icon = getGroupIcon(name, existingIcons);
-    const group = createGroup(name, icon);
+    const group = createGroup(name);
     setGroups((prev) => [...prev, group]);
     setActiveGroupId(group.id);
     setNewGroupName("");
