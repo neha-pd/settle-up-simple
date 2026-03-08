@@ -125,7 +125,7 @@ export function AddExpenseForm({ members, onAdd }: AddExpenseFormProps) {
             </div>
           </div>
 
-          <Button type="submit" className="w-full h-11 rounded-xl gradient-primary border-0 shadow-glow hover:opacity-90 transition-opacity font-display font-bold">
+          <Button type="submit" disabled={!isValid} className="w-full h-11 rounded-xl gradient-primary border-0 shadow-glow hover:opacity-90 transition-opacity font-display font-bold disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none">
             Add Expense
           </Button>
         </form>
