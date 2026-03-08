@@ -169,11 +169,17 @@ const Index = () => {
         {/* Hero Header */}
         <div className="gradient-hero">
           <div className="container max-w-2xl pt-12 pb-8 px-5">
-            <div className="flex items-center gap-3 mb-1">
-              <div className="h-10 w-10 rounded-2xl gradient-primary flex items-center justify-center shadow-glow">
-                <Wallet className="h-5 w-5 text-primary-foreground" />
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-2xl gradient-primary flex items-center justify-center shadow-glow">
+                  <Wallet className="h-5 w-5 text-primary-foreground" />
+                </div>
+                <h1 className="font-display font-extrabold text-2xl tracking-tight">SettleUp</h1>
               </div>
-              <h1 className="font-display font-extrabold text-2xl tracking-tight">SettleUp</h1>
+              <Button variant="ghost" size="sm" onClick={signOut} className="text-muted-foreground hover:text-negative gap-1.5 rounded-xl text-xs">
+                <LogOut className="h-3.5 w-3.5" />
+                Sign Out
+              </Button>
             </div>
             <p className="text-muted-foreground text-sm mt-3 max-w-md">
               Split expenses effortlessly. Create a group, add members, and let us figure out who owes what.
