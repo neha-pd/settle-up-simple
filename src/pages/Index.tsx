@@ -16,18 +16,16 @@ import type { Member, Expense } from "@/lib/expenses";
 interface Group {
   id: string;
   name: string;
+  icon: string;
   members: Member[];
   expenses: Expense[];
 }
 
-const createGroup = (name: string): Group => ({
-  id: crypto.randomUUID(),
-  name,
-  members: [],
-  expenses: [],
-});
-
-const EMOJIS = ["🏖️", "🍕", "🏠", "✈️", "🎉", "🚗", "🎮", "☕"];
+const GROUP_ICONS = [
+  "🏖️", "🍕", "🏠", "✈️", "🎉", "🚗", "🎮", "☕",
+  "🎯", "🌮", "🎸", "⚽", "🏕️", "🎂", "🛒", "💼",
+  "🎬", "🧳", "🍿", "🏋️", "🎤", "🛍️", "🍣", "🚀",
+];
 
 const Index = () => {
   const [groups, setGroups] = useState<Group[]>([]);
