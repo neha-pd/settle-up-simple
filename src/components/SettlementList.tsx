@@ -22,7 +22,7 @@ export function SettlementList({ members, settlements, settledPayments, onMarkSe
   const getName = (id: string) => members.find((m) => m.id === id)?.name ?? id;
 
   const isSettled = (s: Settlement) =>
-    settledPayments.some((p) => p.from === s.from && p.to === s.to && p.amount === s.amount);
+    (settledPayments ?? []).some((p) => p.from === s.from && p.to === s.to && p.amount === s.amount);
 
   const allSettled = settlements.length > 0 && settlements.every(isSettled);
   const settledCount = settlements.filter(isSettled).length;
