@@ -33,10 +33,12 @@ export function AddExpenseForm({ members, onAdd }: AddExpenseFormProps) {
     }
   };
 
+  const isValid = title.trim().length > 0 && !isNaN(parseFloat(amount)) && parseFloat(amount) > 0 && paidBy.length > 0 && splitAmong.length > 0;
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isValid) return;
     const parsedAmount = parseFloat(amount);
-    if (!title.trim() || isNaN(parsedAmount) || parsedAmount <= 0 || !paidBy || splitAmong.length === 0) return;
     onAdd(title.trim(), Math.round(parsedAmount * 100) / 100, paidBy, splitAmong);
     setTitle("");
     setAmount("");
@@ -123,7 +125,7 @@ export function AddExpenseForm({ members, onAdd }: AddExpenseFormProps) {
             </div>
           </div>
 
-          <Button type="submit" className="w-full h-11 rounded-xl gradient-primary border-0 shadow-glow hover:opacity-90 transition-opacity font-display font-bold">
+          <Button type="submit" disabled={!isValid} className="w-full h-11 rounded-xl gradient-primary border-0 shadow-glow hover:opacity-90 transition-opacity font-display font-bold disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none">
             Add Expense
           </Button>
         </form>
