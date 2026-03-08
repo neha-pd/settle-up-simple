@@ -9,7 +9,7 @@ import { ExpenseList } from "@/components/ExpenseList";
 import { MemberAvatar } from "@/components/MemberAvatar";
 import { computeBalances, simplifyDebts } from "@/lib/expenses";
 import { toast } from "@/hooks/use-toast";
-import { Trash2, X, Wallet, Plus, ChevronLeft, Users, Sparkles, IndianRupee, Receipt, ArrowRight, Download } from "lucide-react";
+import { Trash2, X, Wallet, Plus, ChevronLeft, Users, IndianRupee, Receipt, ArrowRight, Download } from "lucide-react";
 import { exportGroupPdf } from "@/lib/exportPdf";
 import type { Member, Expense } from "@/lib/expenses";
 
@@ -20,39 +20,7 @@ interface Group {
   expenses: Expense[];
 }
 
-const GROUP_ICONS: Record<string, string> = {
-  trip: "✈️", travel: "✈️", vacation: "🏖️", beach: "🏖️", goa: "🏖️",
-  food: "🍕", dinner: "🍽️", lunch: "🍽️", restaurant: "🍽️", pizza: "🍕",
-  home: "🏠", rent: "🏠", house: "🏠", flat: "🏠", apartment: "🏠",
-  party: "🎉", birthday: "🎂", celebration: "🎉",
-  car: "🚗", ride: "🚗", cab: "🚕", uber: "🚕", fuel: "⛽",
-  game: "🎮", gaming: "🎮", movie: "🎬", film: "🎬",
-  coffee: "☕", cafe: "☕", tea: "☕",
-  office: "💼", work: "💼", project: "💼",
-  grocery: "🛒", shopping: "🛍️", shop: "🛍️",
-  gym: "🏋️", sport: "⚽", cricket: "🏏", football: "⚽",
-  music: "🎸", concert: "🎤",
-  trek: "🏕️", hike: "🏕️", camp: "🏕️", outing: "🌄",
-};
-
-const DEFAULT_ICONS = ["🏖️", "🍕", "🏠", "✈️", "🎉", "🚗", "🎮", "☕", "🎯", "🌮", "🎸", "⚽", "🏕️", "🎂", "🛒", "💼"];
-
-function getGroupIcon(name: string, existingIcons: string[]): string {
-  const lower = name.toLowerCase();
-  for (const [keyword, icon] of Object.entries(GROUP_ICONS)) {
-    if (lower.includes(keyword)) return icon;
-  }
-  // Assign a unique default icon not already used
-  const available = DEFAULT_ICONS.filter((i) => !existingIcons.includes(i));
-  if (available.length > 0) {
-    const hash = lower.split("").reduce((a, c) => a + c.charCodeAt(0), 0);
-    return available[hash % available.length];
-  }
-  const hash = lower.split("").reduce((a, c) => a + c.charCodeAt(0), 0);
-  return DEFAULT_ICONS[hash % DEFAULT_ICONS.length];
-}
-
-const createGroup = (name: string, icon: string): Group => ({
+const createGroup = (name: string): Group => ({
   id: crypto.randomUUID(),
   name,
   members: [],
@@ -93,15 +61,7 @@ const Index = () => {
       toast({ title: "⚠️ Duplicate group", description: `A group named "${name}" already exists.`, variant: "destructive" });
       return;
     }
-    const existingIcons = groups.map((g) => {
-      const lower = g.name.toLowerCase();
-      for (const [keyword, icon] of Object.entries(GROUP_ICONS)) {
-        if (lower.includes(keyword)) return icon;
-      }
-      return "";
-    });
-    const icon = getGroupIcon(name, existingIcons);
-    const group = createGroup(name, icon);
+    const group = createGroup(name);
     setGroups((prev) => [...prev, group]);
     setActiveGroupId(group.id);
     setNewGroupName("");
@@ -215,7 +175,6 @@ const Index = () => {
           ) : (
             <div className="space-y-3">
               {groups.map((g, i) => {
-                const emoji = getGroupIcon(g.name, []);
                 const groupTotal = g.expenses.reduce((s, e) => s + e.amount, 0);
                 return (
                   <button
@@ -225,9 +184,6 @@ const Index = () => {
                     style={{ animationDelay: `${i * 60}ms` }}
                   >
                     <div className="flex items-center gap-3.5">
-                      <div className="h-12 w-12 rounded-xl gradient-hero flex items-center justify-center text-xl shrink-0">
-                        {emoji}
-                      </div>
                       <div className="flex-1 min-w-0">
                         <p className="font-display font-bold text-[15px] truncate">{g.name}</p>
                         <p className="text-xs text-muted-foreground mt-0.5">
@@ -270,7 +226,13 @@ const Index = () => {
   }
 
   // ─── Active Group View ───
-  const emoji = getGroupIcon(activeGroup.name, []);
+  const handleBack = () => {
+    if (activeGroup.members.length === 0) {
+      deleteGroup(activeGroup.id);
+    } else {
+      setActiveGroupId(null);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -278,10 +240,9 @@ const Index = () => {
       <header className="border-b glass-strong sticky top-0 z-10">
         <div className="container max-w-2xl py-3 px-5 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <Button variant="ghost" size="icon" onClick={() => setActiveGroupId(null)} className="h-9 w-9 rounded-xl">
+            <Button variant="ghost" size="icon" onClick={handleBack} className="h-9 w-9 rounded-xl">
               <ChevronLeft className="h-5 w-5" />
             </Button>
-            <div className="h-9 w-9 rounded-xl gradient-hero flex items-center justify-center text-base">{emoji}</div>
             <div>
               {isEditingName ? (
                 <input
