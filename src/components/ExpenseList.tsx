@@ -1,6 +1,5 @@
 import { useState } from "react";
-import { Receipt, Pencil, Trash2, Check, X, Download } from "lucide-react";
-import { exportExpensePdf } from "@/lib/exportPdf";
+import { Receipt, Pencil, Trash2, Check, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MemberAvatar } from "@/components/MemberAvatar";
@@ -9,12 +8,11 @@ import type { Member, Expense } from "@/lib/expenses";
 interface ExpenseListProps {
   members: Member[];
   expenses: Expense[];
-  groupName?: string;
   onDelete?: (id: string) => void;
   onEdit?: (id: string, title: string, amount: number, paidBy: string, splitAmong: string[]) => void;
 }
 
-export function ExpenseList({ members, expenses, groupName = "Group", onDelete, onEdit }: ExpenseListProps) {
+export function ExpenseList({ members, expenses, onDelete, onEdit }: ExpenseListProps) {
   const getName = (id: string) => members.find((m) => m.id === id)?.name ?? id;
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState("");
@@ -114,9 +112,6 @@ export function ExpenseList({ members, expenses, groupName = "Group", onDelete, 
                 </div>
                 <span className="font-display font-extrabold text-sm shrink-0">₹{exp.amount.toFixed(2)}</span>
                 <div className="flex items-center gap-0.5 ml-1">
-                  <button onClick={() => exportExpensePdf(groupName, members, exp)} className="p-1.5 rounded-lg hover:bg-primary/10 text-muted-foreground hover:text-primary transition-all" title="Export PDF">
-                    <Download className="h-3.5 w-3.5" />
-                  </button>
                   <button onClick={() => startEdit(exp)} className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-all">
                     <Pencil className="h-3.5 w-3.5" />
                   </button>
