@@ -190,6 +190,7 @@ const Index = () => {
                   Sign Out
                 </Button>
               </div>
+            </div>
             <p className="text-muted-foreground text-sm mt-3 max-w-md">
               Split expenses effortlessly. Create a group, add members, and let us figure out who owes what.
             </p>
