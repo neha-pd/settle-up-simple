@@ -265,17 +265,16 @@ const Index = () => {
             </div>
           </div>
           <div className="flex items-center gap-1">
-            {activeGroup.expenses.length > 0 && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => exportGroupPdf(activeGroup.name, activeGroup.members, activeGroup.expenses, balances, settlements)}
-                className="text-muted-foreground hover:text-primary gap-1.5 rounded-xl text-xs"
-              >
-                <Download className="h-3.5 w-3.5" />
-                Export
-              </Button>
-            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={activeGroup.expenses.length === 0}
+              onClick={() => exportGroupPdf(activeGroup.name, activeGroup.members, activeGroup.expenses, balances, settlements)}
+              className="text-muted-foreground hover:text-primary gap-1.5 rounded-xl text-xs disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <Download className="h-3.5 w-3.5" />
+              Export
+            </Button>
             {(activeGroup.members.length > 0 || activeGroup.expenses.length > 0) && (
               <Button variant="ghost" size="sm" onClick={clearGroup} className="text-muted-foreground hover:text-negative gap-1.5 rounded-xl text-xs">
                 <Trash2 className="h-3.5 w-3.5" />
