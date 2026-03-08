@@ -113,7 +113,10 @@ export function ExpenseList({ members, expenses, groupName = "Group", onDelete, 
                   </p>
                 </div>
                 <span className="font-display font-extrabold text-sm shrink-0">₹{exp.amount.toFixed(2)}</span>
-                <div className="flex items-center gap-1 ml-1">
+                <div className="flex items-center gap-0.5 ml-1">
+                  <button onClick={() => exportExpensePdf(groupName, members, exp)} className="p-1.5 rounded-lg hover:bg-primary/10 text-muted-foreground hover:text-primary transition-all" title="Export PDF">
+                    <Download className="h-3.5 w-3.5" />
+                  </button>
                   <button onClick={() => startEdit(exp)} className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-all">
                     <Pencil className="h-3.5 w-3.5" />
                   </button>
