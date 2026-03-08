@@ -10,7 +10,7 @@ import { MemberAvatar } from "@/components/MemberAvatar";
 import { computeBalances, simplifyDebts } from "@/lib/expenses";
 import { toast } from "@/hooks/use-toast";
 import { Trash2, X, Wallet, Plus, ChevronLeft, Users, IndianRupee, Receipt, ArrowRight, Download } from "lucide-react";
-import { exportGroupPdf } from "@/lib/exportPdf";
+import { exportGroupPdf, exportAllGroupsPdf } from "@/lib/exportPdf";
 import type { Member, Expense } from "@/lib/expenses";
 
 interface Group {
