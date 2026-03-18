@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { AddMemberForm } from "@/components/AddMemberForm";
@@ -9,12 +9,14 @@ import { ExpenseList } from "@/components/ExpenseList";
 import { MemberAvatar } from "@/components/MemberAvatar";
 import { computeBalances, simplifyDebts } from "@/lib/expenses";
 import { toast } from "@/hooks/use-toast";
-import { Trash2, X, Wallet, Plus, ChevronLeft, Users, IndianRupee, Receipt, ArrowRight, Download, LogOut, Moon, Sun } from "lucide-react";
+import { Trash2, X, Wallet, Plus, ChevronLeft, Users, IndianRupee, Receipt, ArrowRight, Download, LogOut, Moon, Sun, Pencil, Check } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { exportGroupPdf, exportAllGroupsPdf } from "@/lib/exportPdf";
 import type { Member, Expense } from "@/lib/expenses";
 import { useTheme } from "next-themes";
 import { sendGroupInviteEmail } from "@/lib/inviteEmail";
+import { doc, onSnapshot, serverTimestamp, setDoc } from "firebase/firestore";
+import { db } from "@/integrations/firebase/client";
 
 interface SettledPayment {
   from: string;
@@ -30,6 +32,93 @@ interface Group {
   expenses: Expense[];
   settledPayments: SettledPayment[];
 }
+
+interface PersistedExpense {
+  id: string;
+  title: string;
+  amount: number;
+  paidBy: string;
+  splitAmong: string[];
+  createdAt: string;
+}
+
+interface PersistedSettledPayment {
+  from: string;
+  to: string;
+  amount: number;
+  settledAt: string;
+}
+
+interface PersistedGroup {
+  id: string;
+  name: string;
+  members: Member[];
+  expenses: PersistedExpense[];
+  settledPayments: PersistedSettledPayment[];
+}
+
+const GROUPS_DOC_ID = "groups_data";
+
+const coerceDate = (value: unknown): Date => {
+  if (value && typeof value === "object" && "toDate" in (value as Record<string, unknown>)) {
+    const maybeTimestamp = value as { toDate?: () => Date };
+    if (typeof maybeTimestamp.toDate === "function") {
+      return maybeTimestamp.toDate();
+    }
+  }
+
+  const parsed = value ? new Date(String(value)) : new Date();
+  if (Number.isNaN(parsed.getTime())) return new Date();
+  return parsed;
+};
+
+const serializeGroup = (group: Group): PersistedGroup => ({
+  id: group.id,
+  name: group.name,
+  members: group.members.map((member) => ({
+    id: member.id,
+    name: member.name,
+    email: member.email ?? "",
+  })),
+  expenses: group.expenses.map((expense) => ({
+    id: expense.id,
+    title: expense.title,
+    amount: expense.amount,
+    paidBy: expense.paidBy,
+    splitAmong: expense.splitAmong,
+    createdAt: expense.createdAt.toISOString(),
+  })),
+  settledPayments: group.settledPayments.map((payment) => ({
+    from: payment.from,
+    to: payment.to,
+    amount: payment.amount,
+    settledAt: payment.settledAt.toISOString(),
+  })),
+});
+
+const deserializeGroup = (group: PersistedGroup): Group => ({
+  id: group.id,
+  name: group.name,
+  members: (group.members ?? []).map((member) => ({
+    id: member.id,
+    name: member.name,
+    email: member.email ?? "",
+  })),
+  expenses: (group.expenses ?? []).map((expense) => ({
+    id: expense.id,
+    title: expense.title,
+    amount: expense.amount,
+    paidBy: expense.paidBy,
+    splitAmong: expense.splitAmong ?? [],
+    createdAt: coerceDate(expense.createdAt),
+  })),
+  settledPayments: (group.settledPayments ?? []).map((payment) => ({
+    from: payment.from,
+    to: payment.to,
+    amount: payment.amount,
+    settledAt: coerceDate(payment.settledAt),
+  })),
+});
 
 const createGroup = (name: string): Group => ({
   id: crypto.randomUUID(),
@@ -47,13 +136,99 @@ const Index = () => {
   const [isEditingName, setIsEditingName] = useState(false);
   const [newGroupName, setNewGroupName] = useState("");
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [editingMemberId, setEditingMemberId] = useState<string | null>(null);
+  const [editingMemberName, setEditingMemberName] = useState("");
+  const [editingMemberEmail, setEditingMemberEmail] = useState("");
   const [mounted, setMounted] = useState(false);
+  const [groupsHydrated, setGroupsHydrated] = useState(false);
+  const [syncStatus, setSyncStatus] = useState<"syncing" | "synced" | "error">("syncing");
+  const lastSyncedHashRef = useRef("");
+  const skipNextSaveRef = useRef(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
   const isDarkMode = mounted && (theme === "dark" || resolvedTheme === "dark");
+
+  useEffect(() => {
+    if (!user?.id) {
+      setGroups([]);
+      setActiveGroupId(null);
+      setGroupsHydrated(false);
+      setSyncStatus("synced");
+      lastSyncedHashRef.current = "";
+      skipNextSaveRef.current = false;
+      return;
+    }
+
+    setSyncStatus("syncing");
+    const groupsRef = doc(db, "users", user.id, "app", GROUPS_DOC_ID);
+    const unsubscribe = onSnapshot(
+      groupsRef,
+      (snapshot) => {
+        const persisted = snapshot.exists() ? (snapshot.data().groups as PersistedGroup[] | undefined) : undefined;
+        const safePersisted = Array.isArray(persisted) ? persisted : [];
+        const nextHash = JSON.stringify(safePersisted);
+
+        if (nextHash !== lastSyncedHashRef.current) {
+          lastSyncedHashRef.current = nextHash;
+          skipNextSaveRef.current = true;
+
+          const loadedGroups = safePersisted.map(deserializeGroup);
+          setGroups(loadedGroups);
+          setActiveGroupId((currentActive) =>
+            currentActive && loadedGroups.some((group) => group.id === currentActive) ? currentActive : null
+          );
+        }
+
+        setSyncStatus("synced");
+        setGroupsHydrated(true);
+      },
+      () => {
+        setSyncStatus("error");
+        toast({ title: "⚠️ Sync failed", description: "Could not sync group data from database.", variant: "destructive" });
+        setGroupsHydrated(true);
+      }
+    );
+
+    return () => unsubscribe();
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (!user?.id || !groupsHydrated) return;
+
+    if (skipNextSaveRef.current) {
+      skipNextSaveRef.current = false;
+      return;
+    }
+
+    const serializedGroups = groups.map(serializeGroup);
+    const nextHash = JSON.stringify(serializedGroups);
+    if (nextHash === lastSyncedHashRef.current) return;
+
+    const persistGroups = async () => {
+      try {
+        setSyncStatus("syncing");
+        const groupsRef = doc(db, "users", user.id, "app", GROUPS_DOC_ID);
+        await setDoc(
+          groupsRef,
+          {
+            groups: serializedGroups,
+            updated_at: serverTimestamp(),
+          },
+          { merge: true }
+        );
+        lastSyncedHashRef.current = nextHash;
+        setSyncStatus("synced");
+      } catch {
+        setSyncStatus("error");
+        toast({ title: "⚠️ Save failed", description: "Could not save group data to database.", variant: "destructive" });
+      }
+    };
+
+    persistGroups();
+  }, [groups, user?.id, groupsHydrated]);
 
   const activeGroup = groups.find((g) => g.id === activeGroupId) ?? null;
 
@@ -74,6 +249,28 @@ const Index = () => {
   const totalSpent = useMemo(
     () => (activeGroup?.expenses.reduce((sum, e) => sum + e.amount, 0) ?? 0),
     [activeGroup]
+  );
+
+  const syncBadge = (
+    <Badge
+      variant="secondary"
+      className={
+        syncStatus === "error"
+          ? "gap-1.5 text-[10px] px-2 py-0.5 border border-negative/30 bg-negative/10 text-negative"
+          : "gap-1.5 text-[10px] px-2 py-0.5 border border-border/60 bg-card/70 text-muted-foreground"
+      }
+    >
+      <span
+        className={
+          syncStatus === "error"
+            ? "h-1.5 w-1.5 rounded-full bg-negative"
+            : syncStatus === "syncing"
+            ? "h-1.5 w-1.5 rounded-full bg-primary animate-pulse"
+            : "h-1.5 w-1.5 rounded-full bg-positive"
+        }
+      />
+      {syncStatus === "error" ? "Sync issue" : syncStatus === "syncing" ? "Syncing" : "Live synced"}
+    </Badge>
   );
 
   const handleCreateGroup = (e: React.FormEvent) => {
@@ -120,6 +317,7 @@ const Index = () => {
       memberEmail: member.email,
       groupName: activeGroup.name,
       inviterName,
+      inviterEmail: user?.email,
     });
 
     if (inviteStatus.sent) {
@@ -147,6 +345,55 @@ const Index = () => {
     if (!activeGroup) return;
     if (activeGroup.expenses.some((e) => e.paidBy === id || e.splitAmong.includes(id))) return;
     updateGroup({ members: activeGroup.members.filter((m) => m.id !== id) });
+  };
+
+  const startEditingMember = (member: Member) => {
+    setEditingMemberId(member.id);
+    setEditingMemberName(member.name);
+    setEditingMemberEmail(member.email);
+  };
+
+  const cancelEditingMember = () => {
+    setEditingMemberId(null);
+    setEditingMemberName("");
+    setEditingMemberEmail("");
+  };
+
+  const saveMemberEdit = () => {
+    if (!activeGroup || !editingMemberId) return;
+
+    const nextName = editingMemberName.trim();
+    const nextEmail = editingMemberEmail.trim().toLowerCase();
+
+    if (!nextName || !nextEmail) {
+      toast({ title: "⚠️ Missing fields", description: "Member name and email are required.", variant: "destructive" });
+      return;
+    }
+
+    const hasDuplicateName = activeGroup.members.some(
+      (member) => member.id !== editingMemberId && member.name.toLowerCase() === nextName.toLowerCase()
+    );
+    if (hasDuplicateName) {
+      toast({ title: "⚠️ Duplicate member", description: `A member named \"${nextName}\" already exists.`, variant: "destructive" });
+      return;
+    }
+
+    const hasDuplicateEmail = activeGroup.members.some(
+      (member) => member.id !== editingMemberId && member.email.toLowerCase() === nextEmail
+    );
+    if (hasDuplicateEmail) {
+      toast({ title: "⚠️ Duplicate email", description: `\"${nextEmail}\" is already added in this group.`, variant: "destructive" });
+      return;
+    }
+
+    updateGroup({
+      members: activeGroup.members.map((member) =>
+        member.id === editingMemberId ? { ...member, name: nextName, email: nextEmail } : member
+      ),
+    });
+
+    toast({ title: "✏️ Member updated", description: `${nextName}'s details were updated.` });
+    cancelEditingMember();
   };
 
   const addExpense = (title: string, amount: number, paidBy: string, splitAmong: string[]) => {
@@ -272,6 +519,14 @@ const Index = () => {
     </div>
   );
 
+  if (user?.id && !groupsHydrated) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="h-8 w-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
   // ─── Group List View ───
   if (!activeGroup) {
     return (
@@ -280,11 +535,14 @@ const Index = () => {
         {/* Hero Header */}
         <div className="gradient-hero">
           <div className="container max-w-2xl pt-12 pb-8 px-5">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-2xl gradient-primary flex items-center justify-center shadow-glow">
-                <Wallet className="h-5 w-5 text-primary-foreground" />
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-2xl gradient-primary flex items-center justify-center shadow-glow">
+                  <Wallet className="h-5 w-5 text-primary-foreground" />
+                </div>
+                <h1 className="font-display font-extrabold text-2xl tracking-tight">SettleUp</h1>
               </div>
-              <h1 className="font-display font-extrabold text-2xl tracking-tight">SettleUp</h1>
+              {syncBadge}
             </div>
             <p className="text-muted-foreground text-sm mt-3 max-w-md">
               Split expenses effortlessly. Create a group, add members, and let us figure out who owes what.
@@ -425,7 +683,8 @@ const Index = () => {
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-2">
+            {syncBadge}
             <Button
               variant="ghost"
               size="sm"
@@ -480,19 +739,69 @@ const Index = () => {
           <AddMemberForm onAdd={addMember} />
           {activeGroup.members.length > 0 && (
             <div className="flex flex-wrap gap-2">
-              {activeGroup.members.map((m) => (
-                <div key={m.id} className="flex items-center gap-2 rounded-xl glass shadow-soft pl-1.5 pr-2 py-1.5 animate-fade-in-scale">
-                  <MemberAvatar name={m.name} size="sm" />
-                  <span className="text-sm font-medium">{m.name}</span>
-                  <button
-                    onClick={() => removeMember(m.id)}
-                    className="ml-0.5 rounded-full p-1 hover:bg-negative/10 text-muted-foreground hover:text-negative transition-all"
-                    title={activeGroup.expenses.some((e) => e.paidBy === m.id || e.splitAmong.includes(m.id)) ? "Can't remove — part of expenses" : "Remove"}
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                </div>
-              ))}
+              {activeGroup.members.map((m) => {
+                const isEditing = editingMemberId === m.id;
+                const hasExpenses = activeGroup.expenses.some((e) => e.paidBy === m.id || e.splitAmong.includes(m.id));
+
+                return (
+                  <div key={m.id} className="flex items-center gap-2 rounded-xl glass shadow-soft pl-1.5 pr-2 py-1.5 animate-fade-in-scale">
+                    <MemberAvatar name={isEditing ? editingMemberName || m.name : m.name} size="sm" />
+
+                    {isEditing ? (
+                      <>
+                        <input
+                          value={editingMemberName}
+                          onChange={(e) => setEditingMemberName(e.target.value)}
+                          placeholder="Name"
+                          className="h-8 w-28 rounded-lg border border-input bg-card px-2 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        />
+                        <input
+                          type="email"
+                          value={editingMemberEmail}
+                          onChange={(e) => setEditingMemberEmail(e.target.value)}
+                          placeholder="Email"
+                          className="h-8 w-44 rounded-lg border border-input bg-card px-2 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        />
+                        <button
+                          onClick={saveMemberEdit}
+                          className="rounded-full p-1 hover:bg-positive/10 text-muted-foreground hover:text-positive transition-all"
+                          title="Save"
+                        >
+                          <Check className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          onClick={cancelEditingMember}
+                          className="rounded-full p-1 hover:bg-negative/10 text-muted-foreground hover:text-negative transition-all"
+                          title="Cancel"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium truncate max-w-[140px]">{m.name}</p>
+                          <p className="text-[11px] text-muted-foreground truncate max-w-[200px]">{m.email}</p>
+                        </div>
+                        <button
+                          onClick={() => startEditingMember(m)}
+                          className="ml-0.5 rounded-full p-1 hover:bg-primary/10 text-muted-foreground hover:text-primary transition-all"
+                          title="Edit member"
+                        >
+                          <Pencil className="h-3 w-3" />
+                        </button>
+                        <button
+                          onClick={() => removeMember(m.id)}
+                          className="ml-0.5 rounded-full p-1 hover:bg-negative/10 text-muted-foreground hover:text-negative transition-all"
+                          title={hasExpenses ? "Can't remove — part of expenses" : "Remove"}
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
         </section>

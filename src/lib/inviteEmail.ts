@@ -3,6 +3,7 @@ interface SendInviteEmailInput {
   memberEmail: string;
   groupName: string;
   inviterName: string;
+  inviterEmail?: string;
 }
 
 interface SendInviteEmailResult {
@@ -15,6 +16,7 @@ export async function sendGroupInviteEmail({
   memberEmail,
   groupName,
   inviterName,
+  inviterEmail,
 }: SendInviteEmailInput): Promise<SendInviteEmailResult> {
   const serviceId = import.meta.env.VITE_EMAILJS_SERVICE_ID;
   const templateId = import.meta.env.VITE_EMAILJS_TEMPLATE_ID;
@@ -39,6 +41,9 @@ export async function sendGroupInviteEmail({
           to_name: memberName,
           group_name: groupName,
           inviter_name: inviterName,
+          email: memberEmail,
+          name: inviterName,
+          inviter_email: inviterEmail ?? "",
           message: `${inviterName} added you to the group \"${groupName}\" on SettleUp.`,
         },
       }),
