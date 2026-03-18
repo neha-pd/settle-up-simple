@@ -1,22 +1,18 @@
-# Welcome to your Lovable project
+# SettleUp - Smart Expense Splitter
+
+Split group expenses smartly with debt simplification. Minimize transactions and settle up easily.
 
 ## Project info
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+This is a React-based expense splitting application built with modern web technologies.
 
 ## How can I edit this code?
 
 There are several ways of editing your application.
 
-**Use Lovable**
-
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
 **Use your preferred IDE**
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+You can clone this repo and push changes using your favorite IDE.
 
 The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
 
@@ -50,7 +46,7 @@ npm run dev
 - Click on "New codespace" to launch a new Codespace environment.
 - Edit files directly within the Codespace and commit and push your changes once you're done.
 
-## What technologies are used for this project?
+## Technologies used
 
 This project is built with:
 
@@ -60,14 +56,50 @@ This project is built with:
 - shadcn-ui
 - Tailwind CSS
 
+## Auth configuration
+
+This app now uses Firebase free-tier services for auth and persisted user profile data.
+
+- Email/password auth via Firebase Authentication
+- Google sign-in via Firebase Authentication popup
+- Profile persistence in Cloud Firestore (`users` collection)
+
+Set these values from your Firebase project config in `.env`:
+
+```sh
+VITE_FIREBASE_API_KEY=""
+VITE_FIREBASE_AUTH_DOMAIN=""
+VITE_FIREBASE_PROJECT_ID=""
+VITE_FIREBASE_STORAGE_BUCKET=""
+VITE_FIREBASE_MESSAGING_SENDER_ID=""
+VITE_FIREBASE_APP_ID=""
+```
+
+For member invite emails (on adding a member to a group), configure EmailJS in `.env`:
+
+```sh
+VITE_EMAILJS_SERVICE_ID=""
+VITE_EMAILJS_TEMPLATE_ID=""
+VITE_EMAILJS_PUBLIC_KEY=""
+```
+
+In EmailJS, create a template that uses these params:
+
+- `to_email`
+- `to_name`
+- `group_name`
+- `inviter_name`
+- `message`
+
+In Firebase Console, enable:
+
+1. Authentication → Sign-in method → Email/Password + Google
+2. Firestore Database (create in test mode for initial setup)
+
+Restart the dev server after updating environment variables.
+
 ## How can I deploy this project?
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+You can deploy this project to any static hosting service like Vercel, Netlify, or GitHub Pages. Simply build the project with `npm run build` and deploy the `dist` folder.
 
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+## Technologies used

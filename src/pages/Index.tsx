@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { AddMemberForm } from "@/components/AddMemberForm";
@@ -9,10 +9,12 @@ import { ExpenseList } from "@/components/ExpenseList";
 import { MemberAvatar } from "@/components/MemberAvatar";
 import { computeBalances, simplifyDebts } from "@/lib/expenses";
 import { toast } from "@/hooks/use-toast";
-import { Trash2, X, Wallet, Plus, ChevronLeft, Users, IndianRupee, Receipt, ArrowRight, Download, LogOut } from "lucide-react";
+import { Trash2, X, Wallet, Plus, ChevronLeft, Users, IndianRupee, Receipt, ArrowRight, Download, LogOut, Moon, Sun } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { exportGroupPdf, exportAllGroupsPdf } from "@/lib/exportPdf";
 import type { Member, Expense } from "@/lib/expenses";
+import { useTheme } from "next-themes";
+import { sendGroupInviteEmail } from "@/lib/inviteEmail";
 
 interface SettledPayment {
   from: string;
@@ -39,10 +41,19 @@ const createGroup = (name: string): Group => ({
 
 const Index = () => {
   const { signOut, profile, user } = useAuth();
+  const { theme, setTheme, resolvedTheme } = useTheme();
   const [groups, setGroups] = useState<Group[]>([]);
   const [activeGroupId, setActiveGroupId] = useState<string | null>(null);
   const [isEditingName, setIsEditingName] = useState(false);
   const [newGroupName, setNewGroupName] = useState("");
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const isDarkMode = mounted && (theme === "dark" || resolvedTheme === "dark");
 
   const activeGroup = groups.find((g) => g.id === activeGroupId) ?? null;
 
@@ -83,10 +94,53 @@ const Index = () => {
     if (activeGroupId === id) setActiveGroupId(null);
   };
 
-  const addMember = (name: string) => {
+  const addMember = async (name: string, email: string) => {
     if (!activeGroup) return;
-    if (activeGroup.members.some((m) => m.name.toLowerCase() === name.toLowerCase())) return;
-    updateGroup({ members: [...activeGroup.members, { id: crypto.randomUUID(), name }] });
+    const normalizedName = name.trim();
+    const normalizedEmail = email.trim().toLowerCase();
+
+    if (!normalizedName || !normalizedEmail) return;
+
+    if (activeGroup.members.some((m) => m.name.toLowerCase() === normalizedName.toLowerCase())) {
+      toast({ title: "⚠️ Duplicate member", description: `A member named \"${normalizedName}\" already exists.`, variant: "destructive" });
+      return;
+    }
+
+    if (activeGroup.members.some((m) => m.email.toLowerCase() === normalizedEmail)) {
+      toast({ title: "⚠️ Duplicate email", description: `\"${normalizedEmail}\" is already added in this group.`, variant: "destructive" });
+      return;
+    }
+
+    const member: Member = { id: crypto.randomUUID(), name: normalizedName, email: normalizedEmail };
+    updateGroup({ members: [...activeGroup.members, member] });
+
+    const inviterName = profile?.display_name || user?.email?.split("@")[0] || "A group admin";
+    const inviteStatus = await sendGroupInviteEmail({
+      memberName: member.name,
+      memberEmail: member.email,
+      groupName: activeGroup.name,
+      inviterName,
+    });
+
+    if (inviteStatus.sent) {
+      toast({ title: "📩 Invite sent", description: `Invitation email sent to ${member.email}.` });
+      return;
+    }
+
+    if (inviteStatus.reason === "not_configured") {
+      toast({
+        title: "⚠️ Invite not sent",
+        description: "Email service is not configured. Add EmailJS keys in .env.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    toast({
+      title: "⚠️ Invite failed",
+      description: `Could not send invite email to ${member.email}.`,
+      variant: "destructive",
+    });
   };
 
   const removeMember = (id: string) => {
@@ -162,40 +216,75 @@ const Index = () => {
     toast({ title: "↩️ Settlement undone", description: "Marked as unsettled." });
   };
 
+  const userMenu = (
+    <div className="fixed top-4 right-4 z-40 user-menu">
+      <div className="relative">
+        <button
+          onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+          className="flex flex-col items-center gap-0.5 transition-opacity hover:opacity-80"
+        >
+          {profile?.avatar_url ? (
+            <img src={profile.avatar_url} alt="" className="h-9 w-9 rounded-full ring-2 ring-border" />
+          ) : (
+            <div className="h-9 w-9 rounded-full gradient-primary flex items-center justify-center text-primary-foreground font-display font-bold text-sm ring-2 ring-border">
+              {(profile?.display_name || user?.email || "U").slice(0, 1).toUpperCase()}
+            </div>
+          )}
+          <span className="text-[10px] font-medium text-muted-foreground truncate max-w-[80px]">
+            {profile?.display_name || user?.email?.split("@")[0] || "User"}
+          </span>
+        </button>
+        {isUserMenuOpen && (
+          <>
+            <div
+              className="fixed inset-0 z-10"
+              onClick={() => setIsUserMenuOpen(false)}
+            />
+            <div className="absolute right-0 top-full mt-1 z-20 animate-fade-in rounded-xl shadow-soft glass min-w-[130px] p-1.5">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setTheme(isDarkMode ? "light" : "dark");
+                  setIsUserMenuOpen(false);
+                }}
+                className="w-full justify-start gap-1.5 rounded-lg text-xs"
+              >
+                {isDarkMode ? <Sun className="h-3.5 w-3.5" /> : <Moon className="h-3.5 w-3.5" />}
+                {isDarkMode ? "Light Mode" : "Dark Mode"}
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setIsUserMenuOpen(false);
+                  signOut();
+                }}
+                className="w-full justify-start text-muted-foreground hover:text-negative gap-1.5 rounded-lg text-xs"
+              >
+                <LogOut className="h-3.5 w-3.5" />
+                Sign Out
+              </Button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+
   // ─── Group List View ───
   if (!activeGroup) {
     return (
       <div className="min-h-screen bg-background">
+        {userMenu}
         {/* Hero Header */}
         <div className="gradient-hero">
           <div className="container max-w-2xl pt-12 pb-8 px-5">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-2xl gradient-primary flex items-center justify-center shadow-glow">
-                  <Wallet className="h-5 w-5 text-primary-foreground" />
-                </div>
-                <h1 className="font-display font-extrabold text-2xl tracking-tight">SettleUp</h1>
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-2xl gradient-primary flex items-center justify-center shadow-glow">
+                <Wallet className="h-5 w-5 text-primary-foreground" />
               </div>
-              <div className="relative group">
-                <button className="flex flex-col items-center gap-0.5">
-                  {profile?.avatar_url ? (
-                    <img src={profile.avatar_url} alt="" className="h-9 w-9 rounded-full ring-2 ring-border" />
-                  ) : (
-                    <div className="h-9 w-9 rounded-full gradient-primary flex items-center justify-center text-primary-foreground font-display font-bold text-sm ring-2 ring-border">
-                      {(profile?.display_name || user?.email || "U").slice(0, 1).toUpperCase()}
-                    </div>
-                  )}
-                  <span className="text-[10px] font-medium text-muted-foreground truncate max-w-[80px]">
-                    {profile?.display_name || user?.email?.split("@")[0] || "User"}
-                  </span>
-                </button>
-                <div className="absolute right-0 top-full mt-1 opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-opacity z-20">
-                  <Button variant="ghost" size="sm" onClick={signOut} className="text-muted-foreground hover:text-negative gap-1.5 rounded-xl text-xs whitespace-nowrap shadow-soft glass">
-                    <LogOut className="h-3.5 w-3.5" />
-                    Sign Out
-                  </Button>
-                </div>
-              </div>
+              <h1 className="font-display font-extrabold text-2xl tracking-tight">SettleUp</h1>
             </div>
             <p className="text-muted-foreground text-sm mt-3 max-w-md">
               Split expenses effortlessly. Create a group, add members, and let us figure out who owes what.
@@ -239,7 +328,7 @@ const Index = () => {
               <div className="h-20 w-20 rounded-3xl gradient-hero mx-auto flex items-center justify-center">
                 <Users className="h-9 w-9 text-muted-foreground/50" />
               </div>
-              <div>
+              <div className="space-y-1">
                 <p className="font-display font-semibold text-foreground">No groups yet</p>
                 <p className="text-muted-foreground text-sm mt-1">Create your first group to start splitting expenses.</p>
               </div>
@@ -308,6 +397,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      {userMenu}
       {/* Header */}
       <header className="border-b glass-strong sticky top-0 z-10">
         <div className="container max-w-2xl py-3 px-5 flex items-center justify-between">
@@ -315,7 +405,7 @@ const Index = () => {
             <Button variant="ghost" size="icon" onClick={handleBack} className="h-9 w-9 rounded-xl">
               <ChevronLeft className="h-5 w-5" />
             </Button>
-            <div>
+            <div className="group-name-section">
               {isEditingName ? (
                 <input
                   autoFocus

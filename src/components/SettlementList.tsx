@@ -34,7 +34,7 @@ export function SettlementList({ members, settlements, settledPayments, onMarkSe
           <div className="h-8 w-8 rounded-xl gradient-primary flex items-center justify-center">
             <Sparkles className="h-4 w-4 text-primary-foreground" />
           </div>
-          <div>
+          <div className="flex flex-col">
             <h3 className="font-display font-bold text-sm">Simplified Settlements</h3>
             <p className="text-[11px] text-muted-foreground">Minimum transactions to settle all debts</p>
           </div>
