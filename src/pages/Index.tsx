@@ -1,6 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { AddMemberForm } from "@/components/AddMemberForm";
 import { AddExpenseForm } from "@/components/AddExpenseForm";
 import { BalanceSummary } from "@/components/BalanceSummary";
@@ -249,28 +248,6 @@ const Index = () => {
   const totalSpent = useMemo(
     () => (activeGroup?.expenses.reduce((sum, e) => sum + e.amount, 0) ?? 0),
     [activeGroup]
-  );
-
-  const syncBadge = (
-    <Badge
-      variant="secondary"
-      className={
-        syncStatus === "error"
-          ? "gap-1.5 text-[10px] px-2 py-0.5 border border-negative/30 bg-negative/10 text-negative"
-          : "gap-1.5 text-[10px] px-2 py-0.5 border border-border/60 bg-card/70 text-muted-foreground"
-      }
-    >
-      <span
-        className={
-          syncStatus === "error"
-            ? "h-1.5 w-1.5 rounded-full bg-negative"
-            : syncStatus === "syncing"
-            ? "h-1.5 w-1.5 rounded-full bg-primary animate-pulse"
-            : "h-1.5 w-1.5 rounded-full bg-positive"
-        }
-      />
-      {syncStatus === "error" ? "Sync issue" : syncStatus === "syncing" ? "Syncing" : "Live synced"}
-    </Badge>
   );
 
   const handleCreateGroup = (e: React.FormEvent) => {
@@ -542,7 +519,6 @@ const Index = () => {
                 </div>
                 <h1 className="font-display font-extrabold text-2xl tracking-tight">SettleUp</h1>
               </div>
-              {syncBadge}
             </div>
             <p className="text-muted-foreground text-sm mt-3 max-w-md">
               Split expenses effortlessly. Create a group, add members, and let us figure out who owes what.
@@ -684,7 +660,6 @@ const Index = () => {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {syncBadge}
             <Button
               variant="ghost"
               size="sm"
