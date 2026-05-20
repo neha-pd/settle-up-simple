@@ -82,8 +82,11 @@ export function AddExpenseForm({ members, onAdd }: AddExpenseFormProps) {
             <Label className="text-xs font-medium text-muted-foreground">Who paid?</Label>
             <Select value={paidBy} onValueChange={(value) => {
               if (value === "select-all") {
-                // When "Select all" is clicked, auto-select all members in split among
+                // When "Select all" is clicked, auto-select all members in split and set first as payer
                 setSplitAmong(members.map((m) => m.id));
+                if (members.length > 0) {
+                  setPaidBy(members[0].id);
+                }
               } else {
                 setPaidBy(value);
               }
