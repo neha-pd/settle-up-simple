@@ -60,13 +60,17 @@ const GROUPS_DOC_ID = "groups_data";
 
 const coerceDate = (value: unknown): Date => {
   if (value && typeof value === "object" && "toDate" in (value as Record<string, unknown>)) {
-    const maybeTimestamp = value as { toDate?: () => Date };
+    const maybeTimestamp = value as { toDate?: () => Date | null | undefined };
     if (typeof maybeTimestamp.toDate === "function") {
-      return maybeTimestamp.toDate();
+      const dateResult = maybeTimestamp.toDate();
+      if (dateResult instanceof Date && !Number.isNaN(dateResult.getTime())) {
+        return dateResult;
+      }
     }
   }
 
-  const parsed = value ? new Date(String(value)) : new Date();
+  if (!value) return new Date();
+  const parsed = new Date(String(value));
   if (Number.isNaN(parsed.getTime())) return new Date();
   return parsed;
 };
@@ -269,53 +273,88 @@ const Index = () => {
   };
 
   const addMember = async (name: string, email: string) => {
-    if (!activeGroup) return;
-    const normalizedName = name.trim();
-    const normalizedEmail = email.trim().toLowerCase();
-
-    if (!normalizedName || !normalizedEmail) return;
-
-    if (activeGroup.members.some((m) => m.name.toLowerCase() === normalizedName.toLowerCase())) {
-      toast({ title: "⚠️ Duplicate member", description: `A member named \"${normalizedName}\" already exists.`, variant: "destructive" });
-      return;
-    }
-
-    if (activeGroup.members.some((m) => m.email.toLowerCase() === normalizedEmail)) {
-      toast({ title: "⚠️ Duplicate email", description: `\"${normalizedEmail}\" is already added in this group.`, variant: "destructive" });
-      return;
-    }
-
-    const member: Member = { id: crypto.randomUUID(), name: normalizedName, email: normalizedEmail };
-    updateGroup({ members: [...activeGroup.members, member] });
-
-    const inviterName = profile?.display_name || user?.email?.split("@")[0] || "A group admin";
-    const inviteStatus = await sendGroupInviteEmail({
-      memberName: member.name,
-      memberEmail: member.email,
-      groupName: activeGroup.name,
-      inviterName,
-      inviterEmail: user?.email,
-    });
-
-    if (inviteStatus.sent) {
-      toast({ title: "📩 Invite sent", description: `Invitation email sent to ${member.email}.` });
-      return;
-    }
-
-    if (inviteStatus.reason === "not_configured") {
+    try {
+      console.log("[DEBUG] addMember: Start - name:", name, "email:", email);
+      
+      if (!activeGroup) {
+        console.error("[DEBUG] addMember: activeGroup is null");
+        return;
+      }
+      
+      const normalizedName = name.trim();
+      const normalizedEmail = email.trim().toLowerCase();
+      console.log("[DEBUG] addMember: Normalized - name:", normalizedName, "email:", normalizedEmail);
+  
+      if (!normalizedName || !normalizedEmail) {
+        console.warn("[DEBUG] addMember: Empty normalized values");
+        return;
+      }
+  
+      if (activeGroup.members.some((m) => m.name.toLowerCase() === normalizedName.toLowerCase())) {
+        console.warn("[DEBUG] addMember: Duplicate name found");
+        toast({ title: "⚠️ Duplicate member", description: `A member named \"${normalizedName}\" already exists.`, variant: "destructive" });
+        return;
+      }
+  
+      if (activeGroup.members.some((m) => m.email.toLowerCase() === normalizedEmail)) {
+        console.warn("[DEBUG] addMember: Duplicate email found");
+        toast({ title: "⚠️ Duplicate email", description: `\"${normalizedEmail}\" is already added in this group.`, variant: "destructive" });
+        return;
+      }
+  
+      const member: Member = { id: crypto.randomUUID(), name: normalizedName, email: normalizedEmail };
+      const groupNameSnapshot = activeGroup.name;
+      console.log("[DEBUG] addMember: Member created -", member);
+      updateGroup({ members: [...activeGroup.members, member] });
+      console.log("[DEBUG] addMember: Group updated with new member");
+  
+      const inviterName = profile?.display_name || user?.email?.split("@")[0] || "A group admin";
+      console.log("[DEBUG] addMember: Inviter name -", inviterName, "profile:", profile, "user.email:", user?.email);
+      
+      const inviteStatus = await sendGroupInviteEmail({
+        memberName: member.name,
+        memberEmail: member.email,
+        groupName: groupNameSnapshot,
+        inviterName,
+        inviterEmail: user?.email,
+      });
+      console.log("[DEBUG] addMember: Invite status -", inviteStatus);
+  
+      if (!activeGroup) {
+        console.warn("[DEBUG] addMember: activeGroup became null after async operation");
+        return;
+      }
+  
+      if (inviteStatus.sent) {
+        console.log("[DEBUG] addMember: Invite sent successfully");
+        toast({ title: "📩 Invite sent", description: `Invitation email sent to ${member.email}.` });
+        return;
+      }
+  
+      if (inviteStatus.reason === "not_configured") {
+        console.warn("[DEBUG] addMember: Email service not configured");
+        toast({
+          title: "⚠️ Invite not sent",
+          description: "Email service is not configured. Add EmailJS keys in .env.",
+          variant: "destructive",
+        });
+        return;
+      }
+  
+      console.warn("[DEBUG] addMember: Invite failed with reason:", inviteStatus.reason);
       toast({
-        title: "⚠️ Invite not sent",
-        description: "Email service is not configured. Add EmailJS keys in .env.",
+        title: "⚠️ Invite failed",
+        description: `Could not send invite email to ${member.email}.`,
         variant: "destructive",
       });
-      return;
+    } catch (error) {
+      console.error("[DEBUG] addMember: Caught exception -", error);
+      toast({
+        title: "❌ Error adding member",
+        description: error instanceof Error ? error.message : "Unknown error occurred",
+        variant: "destructive",
+      });
     }
-
-    toast({
-      title: "⚠️ Invite failed",
-      description: `Could not send invite email to ${member.email}.`,
-      variant: "destructive",
-    });
   };
 
   const removeMember = (id: string) => {

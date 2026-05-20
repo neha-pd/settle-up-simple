@@ -86,24 +86,29 @@ export function SettlementList({ members, settlements, settledPayments, onMarkSe
                       ₹{s.amount.toFixed(2)}
                     </span>
                     {settled ? (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => onUndoSettled(s.from, s.to, s.amount)}
-                        className="h-7 px-2 rounded-lg text-[11px] text-muted-foreground hover:text-negative gap-1"
-                      >
-                        <Undo2 className="h-3 w-3" />
-                        Undo
-                      </Button>
+                      <div className="flex items-center gap-1 ml-2">
+                        <span className="flex items-center gap-1 text-[11px] font-medium text-positive">
+                          <Check className="h-3.5 w-3.5" />
+                          Paid
+                        </span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => onUndoSettled(s.from, s.to, s.amount)}
+                          className="h-7 px-2 rounded-lg text-[11px] text-muted-foreground hover:text-negative gap-1 ml-1"
+                        >
+                          <Undo2 className="h-3 w-3" />
+                          Undo
+                        </Button>
+                      </div>
                     ) : (
                       <Button
-                        variant="ghost"
+                        variant="secondary"
                         size="sm"
                         onClick={() => onMarkSettled(s.from, s.to, s.amount)}
-                        className="h-7 px-2 rounded-lg text-[11px] text-positive hover:bg-positive/10 gap-1"
+                        className="h-7 px-3 rounded-lg text-[11px] font-medium ml-2"
                       >
-                        <Check className="h-3 w-3" />
-                        Paid
+                        Mark as paid
                       </Button>
                     )}
                   </div>
