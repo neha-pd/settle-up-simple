@@ -262,6 +262,17 @@ const Index = () => {
       return;
     }
     const group = createGroup(name);
+    
+    // Automatically add the logged-in user as the first member
+    if (user?.email) {
+      const displayName = profile?.display_name || user.email.split("@")[0] || "You";
+      group.members.push({
+        id: crypto.randomUUID(),
+        name: displayName,
+        email: user.email,
+      });
+    }
+    
     setGroups((prev) => [...prev, group]);
     setActiveGroupId(group.id);
     setNewGroupName("");
