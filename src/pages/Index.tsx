@@ -480,7 +480,7 @@ const Index = () => {
   };
 
   const userMenu = (
-    <div className="fixed top-4 right-4 z-40 user-menu">
+    <div className="fixed top-2 right-4 z-40 user-menu">
       <div className="relative">
         <button
           onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
@@ -590,7 +590,7 @@ const Index = () => {
                 onChange={(e) => setNewGroupName(e.target.value)}
               />
             </div>
-            <Button type="submit" className="h-11 rounded-xl gap-1.5 gradient-primary border-0 shadow-glow hover:opacity-90 transition-opacity px-5">
+            <Button type="submit" disabled={!newGroupName.trim()} className="h-11 rounded-xl gap-1.5 gradient-primary border-0 shadow-glow hover:opacity-90 transition-opacity px-5 disabled:opacity-50 disabled:cursor-not-allowed">
               <Plus className="h-4 w-4" />
               Create
             </Button>
